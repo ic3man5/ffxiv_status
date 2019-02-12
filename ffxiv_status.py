@@ -45,26 +45,37 @@ if __name__ == "__main__":
         parser.add_argument('--username', metavar='-n', type=str, help='SMTP Username login')
         parser.add_argument('--password', metavar='-w', type=str, help='SMTP Password login')
         parser.add_argument('--recipient', metavar='-r', type=str, help='Who is getting the email?')
+        parser.add_argument('--email', metavar='-e', type=bool, help="Send an email")
+        parser.add_argument('--nopause', metavar='-e', type=bool, help='Don\'t Pause at the end')
 
         email_only_variables = ('smtp_server', 'smtp_port', 'username', 'password', 'recipient')
         args = vars(parser.parse_args())
         url = 'http://na.finalfantasyxiv.com/lodestone/news/detail/80cd4583bf743600105b947d6906d0909189e479'
+        no_pause = False
+        dont_send_email = True
         server = 'Excalibur'
         if args['server']:
                 server = args['server']
+        if args['nopause']:
+                no_pause = args['nopause']
+        if args['email']:
+                dont_send_email = args['email']
         if args['url']:
                 url = args['url']
         is_open = is_server_open(url, server)
         if is_open:
                 info = "Server '%s' is open for character creation!" % server
                 print(info)
-                if all(k in args for k in email_only_variables):
-                        print("Sending email...")
-                        send_email(args['recipient'], args['smtp_server'], args['smtp_port'], args['username'], args['password'], info, info)
-                        print("Done sending email...")
+                if not dont_send_email:
+                    if all(k in args for k in email_only_variables):
+                            print("Sending email...")
+                            send_email(args['recipient'], args['smtp_server'], args['smtp_port'], args['username'], args['password'], info, info)
+                            print("Done sending email...")
         else:
                 info = "Server '%s' is closed for character creation ;(" % server
                 print(info)
                 #print("Sending email...")
                 #send_email(args['recipient'], args['smtp_server'], args['smtp_port'], args['username'], args['password'], info, info)
                 #print("Done sending email...")
+        if not no_pause:
+            input("Press any key to continue...")
