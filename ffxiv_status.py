@@ -3,20 +3,30 @@
 import urllib.request
 import argparse
 import smtplib
+from bs4 import BeautifulSoup
+import re
 
 #× Excalibur
+# Old:
 #http://na.finalfantasyxiv.com/lodestone/news/detail/80cd4583bf743600105b947d6906d0909189e479
+# New:
+#https://na.finalfantasyxiv.com/lodestone/worldstatus/
 
-def is_server_open(url, server):
-        page = urllib.request.urlopen(url)
-        data = page.read()
-        for line in data.decode().split('\n'):
-                if server.upper() in line.upper():
-                        if '○' in line.upper():
-                                return True
-                        else:
-                                return False
-        return False
+
+def is_server_open(url, server):  
+    page = urllib.request.urlopen(url)
+    data = page.read()
+    soup = BeautifulSoup(data, 'html.parser')
+    server_divs = soup.find_all('div', attrs={'class':'world-list__item'})
+    reg_exp_match = re.compile('world-ic__.*available js__tooltip')
+    for server_div in server_divs:
+        if server.upper() not in server_div.text.upper():
+            continue
+        i_class = server_div.find('i', reg_exp_match)#, attrs={'class':'world-ic__available js__tooltip'})
+        #print(i_class)
+        if 'Creation of New Characters Available'.upper() == i_class['data-tooltip'].upper():
+            return True
+    return False
 
 def send_email(recipient, smtp_server, port, username, password, subject, body):
         server = smtplib.SMTP(smtp_server, port)
@@ -50,7 +60,7 @@ if __name__ == "__main__":
 
         email_only_variables = ('smtp_server', 'smtp_port', 'username', 'password', 'recipient')
         args = vars(parser.parse_args())
-        url = 'http://na.finalfantasyxiv.com/lodestone/news/detail/80cd4583bf743600105b947d6906d0909189e479'
+        url = 'https://na.finalfantasyxiv.com/lodestone/worldstatus/'
         no_pause = False
         dont_send_email = True
         server = 'Excalibur'
